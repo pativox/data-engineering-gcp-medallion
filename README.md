@@ -69,6 +69,12 @@ GitHub Actions ejecuta el pipeline y la suite de pruebas unitarias en cada push 
 - El procesamiento es determinista: las salidas se regeneran desde raw.
 - Las pruebas cubren reglas de negocio y casos límite sin requerir servicios cloud.
 
+## Documentación complementaria
+- [Diagrama de arquitectura](docs/architecture.md)
+- [Runbook de ejecución y diagnóstico](docs/runbook.md)
+
+Los artefactos generados en `data/processed/` y `reports/` se excluyen de Git mediante `.gitignore`.
+
 ## Estructura
 - `data/raw`: datos fuente sintéticos.
 - `src`: pipeline local.
