@@ -1,0 +1,5 @@
+order_id,customer_id,product_id,order_date,quantity,unit_price,total_amount,channel
+O001,C001,P001,2025-01-05,2,18990,37980,web
+O002,C002,P002,2025-01-06,1,12990,12990,tienda
+O003,C999,P001,2025-01-07,1,18990,18990,web
+O004,C001,P001,2025-01-05,2,18990,37980,web
