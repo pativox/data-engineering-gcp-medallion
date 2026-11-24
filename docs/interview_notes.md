@@ -1,19 +1,15 @@
-# Notas para entrevista — GCP Medallion
+# Guía de defensa técnica — Proyecto GCP
 
-## Problema
-Consolidar ventas retail de distintas fuentes y publicar datos confiables para analítica.
+## Pitch de 60 segundos
+Diseñé un pipeline batch para consolidar órdenes, clientes y productos de múltiples canales. Separé la ingesta en Bronze, la limpieza y validación en Silver y la publicación analítica en Gold. Implementé deduplicación, validación referencial, consistencia de montos y reporte de rechazos. La arquitectura está preparada para migrar el almacenamiento a Cloud Storage y el warehouse a BigQuery.
 
-## Decisiones
-- Bronze conserva el dato de origen.
-- Silver aplica tipado, integridad referencial, deduplicación y reglas de negocio.
-- Gold publica hechos y agregados analíticos.
-- Los rechazos se registran con motivo para mantener trazabilidad.
+## Preguntas que debes poder responder
+1. ¿Por qué Medallion? Separa dato original, dato confiable y producto analítico.
+2. ¿Cómo evitas duplicados? Clave de negocio `order_id`; en producción, `MERGE`/upsert y watermark.
+3. ¿Cómo reprocesas? Mantienes raw inmutable, versión de transformación y particiones de salida.
+4. ¿Cómo escalas? BigQuery particionado y clusterizado, procesamiento distribuido con Dataflow/Dataproc cuando el volumen lo justifique.
+5. ¿Cómo monitoreas? Filas leídas/aceptadas/rechazadas, duración, frescura, errores y alertas.
+6. ¿Qué falta para producción? Secret Manager/IAM, orquestación, CI/CD, pruebas automatizadas, catálogo, SLA y observabilidad.
 
-## Evolución a GCP
-- Cloud Storage para landing y persistencia de capas.
-- BigQuery para tablas analíticas particionadas y clusterizadas.
-- Cloud Run Jobs o Composer para orquestación según complejidad y frecuencia.
-- IAM, presupuestos y alertas para controlar acceso y costos.
-
-## Transparencia
-El pipeline publicado se ejecuta localmente. BigQuery y Cloud Storage son arquitectura objetivo; no se declara despliegue cloud productivo.
+## Métricas de demostración
+Ejecuta el pipeline y registra filas fuente, válidas, rechazadas y razones. No inventes porcentajes de mejora ni resultados de negocio.

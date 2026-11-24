@@ -1,3 +1,7 @@
 product_id,product_name,category,unit_price
-P001,Notebook,Computación,18990
-P002,Mouse,Accesorios,12990
+P001,Alimento Premium,Mascotas,18990
+P002,Arena Sanitaria,Mascotas,12990
+P003,Audífonos,Electrónica,24990
+P004,Teclado,Electrónica,19990
+P005,Botella Térmica,Hogar,9990
+P006,Lámpara LED,Hogar,15990

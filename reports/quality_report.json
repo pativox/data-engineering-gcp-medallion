@@ -1,0 +1,11 @@
+{
+  "source_rows": 182,
+  "accepted_rows": 180,
+  "rejected_rows": 2,
+  "rejection_reasons": {
+    "duplicate_order_id": 1,
+    "unknown_customer": 1
+  },
+  "status": "PASS_WITH_REJECTS",
+  "generated_at_utc": "2026-11-19T16:55:22"
+}

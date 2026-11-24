@@ -1,11 +1,6 @@
-# Estrategia de pruebas
-
-La validación continua ejecuta el pipeline con Python 3.11 mediante GitHub Actions.
-
-Casos a automatizar con pytest:
-- Orden válida pasa a Silver y Gold.
-- Orden duplicada se rechaza.
-- Cliente o producto inexistente se rechaza.
-- Cantidad o precio no positivo se rechaza.
-- Total inconsistente se rechaza.
-- Reejecución regenera las salidas desde Bronze sin duplicar filas.
+# Pruebas manuales sugeridas
+- Ejecutar pipeline dos veces: el número de órdenes válidas debe ser estable.
+- Confirmar que el duplicado se rechaza.
+- Confirmar que la orden con customer_id inexistente se rechaza.
+- Alterar un total y verificar `amount_mismatch`.
+- Verificar que el total de filas válidas + rechazadas = filas fuente.
