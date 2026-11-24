@@ -1,68 +1,77 @@
 # Proyecto 1 — Retail Lakehouse con arquitectura Medallion (GCP)
 
 ## Resumen ejecutivo
-Pipeline batch de ventas que integra clientes, productos y órdenes. Implementa capas **Bronze, Silver y Gold**, controles de calidad, métricas operacionales y un modelo dimensional para analítica.
+Pipeline batch de ventas que integra clientes, productos y órdenes. Implementa una separación conceptual Bronze, Silver y Gold, controles de calidad, métricas operacionales y un modelo dimensional para analítica.
 
-**Stack:** Python 3.10+, SQL, BigQuery (SQL de despliegue), Cloud Storage (arquitectura objetivo).  
-**Ejecución sin costo:** procesamiento local con Python estándar; no requiere cuenta GCP ni servicios pagos.
+**Stack:** Python 3.10+, SQL y BigQuery (scripts SQL de referencia).  
+**Ejecución local:** Python estándar, sin dependencias externas, cuenta GCP ni servicios pagos.
 
 ## Caso de negocio
-Una empresa retail recibe ventas desde distintos canales. Necesita consolidar información, detectar registros duplicados o huérfanos y publicar indicadores confiables para las áreas comercial y operaciones.
+Una empresa retail consolida ventas de distintos canales. Necesita detectar duplicados, referencias huérfanas y errores de negocio antes de publicar indicadores confiables para las áreas comercial y operaciones.
 
-## Arquitectura
-```mermaid
-flowchart LR
-  A[CSV: clientes] --> B[Bronze]
-  C[CSV: productos] --> B
-  D[CSV: órdenes] --> B
-  B --> E[Python ETL + validaciones]
-  E --> F[Silver: datos limpios]
-  F --> G[Gold: hechos y dimensiones]
-  G --> H[BigQuery opcional]
-  H --> I[Power BI / Looker Studio]
-```
+## Arquitectura lógica
+- **Bronze:** archivos CSV originales en `data/raw/`, conservados como fuente inmutable del ejercicio.
+- **Silver:** órdenes validadas, tipadas y enriquecidas en `data/processed/silver_orders.csv`.
+- **Gold:** tabla de hechos, dimensiones de clientes/productos y agregado mensual.
+- **Consumo:** SQL analítico en BigQuery y herramientas BI (integración cloud documentada como evolución, no desplegada).
 
 ## Ejecución local
-Desde esta carpeta:
+Desde la raíz del repositorio:
 ```bash
 python src/pipeline.py
+python -m unittest discover -s tests -p "test_*.py" -v
 ```
-El pipeline genera `data/processed/silver_orders.csv`, `data/processed/gold_fact_sales.csv`, dimensiones y `reports/quality_report.json`.
 
-No instala paquetes externos. Requiere Python 3.10 o superior.
+El pipeline genera:
+- `data/processed/silver_orders.csv`
+- `data/processed/gold_fact_sales.csv`
+- `data/processed/gold_dim_customer.csv`
+- `data/processed/gold_dim_product.csv`
+- `data/processed/gold_monthly_sales.csv`
+- `data/processed/rejected_orders.csv`
+- `reports/quality_report.json`
 
 ## Reglas de calidad
-- `order_id` único; duplicados se rechazan.
-- Cliente y producto deben existir.
-- Cantidad y precio deben ser positivos.
-- `total_amount` debe coincidir con cantidad × precio.
-- Fecha debe ser válida.
-- Se conserva trazabilidad de filas aceptadas y rechazadas.
+- Validación de estructura y columnas requeridas de cada fuente.
+- Claves de clientes y productos no vacías ni duplicadas en sus dimensiones.
+- `order_id` único; duplicados rechazados.
+- Integridad referencial con clientes y productos.
+- Cantidad y precio positivos; rechazo de valores numéricos no finitos.
+- Total consistente con cantidad × precio, usando decimal para evitar errores binarios de punto flotante.
+- Fecha válida y canal informado.
+- Trazabilidad de filas aceptadas y rechazadas con motivo y número de fila.
 
 ## Modelo analítico
+- `fact_sales`: una fila por orden válida.
 - `dim_customer`: cliente, ciudad y fecha de alta.
 - `dim_product`: producto, categoría y precio de referencia.
-- `dim_date`: fecha y atributos calendario.
-- `fact_sales`: una fila por orden válida.
+- `gold_monthly_sales`: ventas, órdenes y unidades por mes.
 
-## Despliegue GCP opcional
-1. Crear un bucket de Cloud Storage.
-2. Cargar `data/raw/` en una ruta de aterrizaje.
-3. Crear un dataset BigQuery.
-4. Ejecutar los SQL de `sql/bigquery/` en orden.
-5. Programar el proceso con Cloud Run Jobs o Composer según volumen y frecuencia.
+## SQL / BigQuery
+Los scripts de `sql/bigquery/` contienen DDL de referencia con particionamiento por fecha y clustering por claves de cliente/producto, además de consultas analíticas. Reemplaza `TU_PROYECTO` por tu proyecto/dataset antes de ejecutar. No se ha desplegado infraestructura GCP en este repositorio.
 
-**Control de costos:** usar el proyecto local para entrevistas. Si se despliega, configurar presupuesto/alertas, limitar datos y eliminar recursos al terminar. La disponibilidad de cuotas gratuitas depende de la cuenta y región.
+## Calidad continua
+GitHub Actions ejecuta el pipeline y la suite de pruebas unitarias en cada push y pull request. El estado real de cada ejecución se consulta en la pestaña **Actions** del repositorio.
 
-## Decisiones técnicas para explicar
-- Bronze conserva el dato recibido para auditoría y reproceso.
-- Silver aplica tipado, deduplicación y reglas de negocio.
-- Gold publica hechos y dimensiones orientados a consumo.
-- La carga es reproducible: los archivos procesados se regeneran desde los datos raw.
-- En producción se agregaría particionamiento por `order_date`, clustering por `customer_id`/`product_id`, control de esquema y orquestación.
+## Evolución cloud (diseño, no despliegue)
+1. Ingestar los archivos en Cloud Storage.
+2. Mantener Bronze en una zona raw con control de lote.
+3. Ejecutar transformación con Cloud Run Jobs o Dataflow según volumen.
+4. Publicar Silver/Gold en BigQuery con particionamiento y clustering.
+5. Orquestar con Workflows o Composer cuando existan dependencias y calendario.
+6. Incorporar IAM de mínimo privilegio, logging, alertas y presupuesto.
+
+## Decisiones técnicas para entrevista
+- Los archivos raw permiten auditoría y reproceso.
+- Silver concentra calidad, tipado, deduplicación e integridad referencial.
+- Gold separa hechos y dimensiones para facilitar consumo analítico.
+- Se usa `Decimal` para importes monetarios.
+- El procesamiento es determinista: las salidas se regeneran desde raw.
+- Las pruebas cubren reglas de negocio y casos límite sin requerir servicios cloud.
 
 ## Estructura
-- `data/raw`: datos fuente ficticios.
+- `data/raw`: datos fuente sintéticos.
 - `src`: pipeline local.
+- `tests`: pruebas unitarias automatizadas.
 - `sql/bigquery`: DDL y consultas analíticas.
-- `reports`: resultado de calidad generado.
+- `reports`: reporte de calidad generado.
